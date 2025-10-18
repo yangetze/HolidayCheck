@@ -118,7 +118,7 @@
 
             try {
                 // 2. Consultar la API de Días Festivos para el país y año actual
-                const apiUrl = `https://api.api-ninjas.com/v1/holidays?country=${countryCode}&year=${year}`;
+                const apiUrl = `http://api.api-ninjas.com/v1/holidays?country=${countryCode}&year=${year}`;
                 // Nota: Usaré 'api-ninjas' como una alternativa popular que a veces no requiere key, 
                 // pero si da error, usa Holidays API (cuyo endpoint y params son diferentes).
                 // Por robustez, usaré el endpoint de Holidays API, asumiendo que el usuario tiene la clave.
