@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horarios y Feriados Bancarios</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        label, select {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+            box-sizing: border-box; /* Incluye padding y borde en el ancho total */
+        }
+        .info-card {
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 6px;
+            background-color: #f9f9f9;
+        }
+        .info-card p {
+            margin: 8px 0;
+            font-size: 1.1em;
+        }
+        .status {
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .feriado {
+            background-color: #ffcdd2;
+            color: #c62828;
+        }
+        .fin-semana {
+            background-color: #fff9c4;
+            color: #fbc02d;
+        }
+        .laborable {
+            background-color: #c8e6c9;
+            color: #388e3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⏰ Horarios y Feriados Globales</h1>
+
+        <label for="country-select">Seleccionar Huso Horario / País:</label>
+        <select id="country-select">
+            <option value="CL" data-timezone="America/Santiago">Chile (CL)</option>
+            <option value="US" data-timezone="America/New_York">EE. UU. (US) - Por Defecto</option>
+            <option value="VE" data-timezone="America/Caracas">Venezuela (VE)</option>
+        </select>
+
+        <div id="info-display" class="info-card">
+            <p><strong>Cargando información...</strong></p>
+        </div>
+    </div>
+
+    <script>
+        // 🚨 IMPORTANTE: Reemplaza 'YOUR_API_KEY' con tu clave real de Holidays API
+        const HOLIDAYS_API_KEY = '3b2d023e-4f65-48aa-bcac-7398be7feefa'; 
+
+        // Códigos de país y sus husos horarios correspondientes.
+        const countryData = {
+            'CL': { name: 'Chile', timezone: 'America/Santiago' },
+            'US': { name: 'EE. UU.', timezone: 'America/New_York' }, // Usamos la de Nueva York como referencia bancaria/financiera
+            'VE': { name: 'Venezuela', timezone: 'America/Caracas' }
+        };
+
+        const selectElement = document.getElementById('country-select');
+        const infoDisplay = document.getElementById('info-display');
+        
+        // 1. Establecer EE. UU. como valor por defecto al cargar la página
+        selectElement.value = 'US'; 
+
+        /**
+         * Función principal para obtener y mostrar toda la información.
+         * @param {string} countryCode - El código de país (CL, US, VE).
+         */
+        async function updateTimeAndHolidays(countryCode) {
+            infoDisplay.innerHTML = '<p><strong>Cargando...</strong></p>';
+            const data = countryData[countryCode];
+            const now = new Date();
+            const year = now.getFullYear();
+            const currentDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
+            
+            let isHoliday = false;
+            let holidayName = '';
+
+            try {
+                // 2. Consultar la API de Días Festivos para el país y año actual
+                const apiUrl = `https://api.api-ninjas.com/v1/holidays?country=${countryCode}&year=${year}`;
+                // Nota: Usaré 'api-ninjas' como una alternativa popular que a veces no requiere key, 
+                // pero si da error, usa Holidays API (cuyo endpoint y params son diferentes).
+                // Por robustez, usaré el endpoint de Holidays API, asumiendo que el usuario tiene la clave.
+                
+                // Reemplazaremos la línea anterior por el endpoint de Holidays API
+                const holidaysApiUrl = `https://calendarific.com/api/v2/holidays?&api_key=${HOLIDAYS_API_KEY}&country=${countryCode}&year=${year}`;
+
+                const response = await fetch(holidaysApiUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`Error en la API: ${response.statusText}`);
+                }
+
+                const json = await response.json();
+                
+                // 3. Verificar si la fecha actual es un día festivo
+                if (json.response && json.response.holidays) {
+                    const todayHoliday = json.response.holidays.find(holiday => holiday.date.iso === currentDate);
+                    if (todayHoliday) {
+                        isHoliday = true;
+                        holidayName = todayHoliday.name;
+                    }
+                }
+            } catch (error) {
+                console.error("Error al obtener feriados:", error);
+                // Si la API falla, la app seguirá funcionando para la hora local y fin de semana.
+            }
+
+            // 4. Obtener la hora y fecha local usando el huso horario
+            const dateOptions = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                timeZone: data.timezone 
+            };
+            const timeOptions = { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit', 
+                hour12: false, // Formato 24 horas
+                timeZone: data.timezone 
+            };
+
+            // Creamos nuevas fechas locales basadas en el huso horario
+            const localDate = new Date().toLocaleString('es-ES', dateOptions);
+            const localTime = new Date().toLocaleString('es-ES', timeOptions);
+            
+            // 5. Determinar el estado del día (Fin de Semana, Feriado, Laborable)
+            const localDayOfWeek = new Date().toLocaleString('es-ES', { weekday: 'short', timeZone: data.timezone });
+            const dayIndex = new Date().toLocaleString('es-ES', { weekday: 'numeric', timeZone: data.timezone }); // 1=Dom, 7=Sab
+            
+            let statusText = 'Día Laborable';
+            let statusClass = 'laborable';
+
+            if (dayIndex === '1' || dayIndex === '7') { // 1 (Domingo) o 7 (Sábado)
+                statusText = 'Fin de Semana';
+                statusClass = 'fin-semana';
+            }
+            
+            if (isHoliday) {
+                statusText = `¡FERIADO BANCARIO! (${holidayName})`;
+                statusClass = 'feriado';
+            }
+            
+            // 6. Mostrar la información en el HTML
+            infoDisplay.innerHTML = `
+                <p><strong>País Seleccionado:</strong> ${data.name}</p>
+                <p><strong>Huso Horario:</strong> ${data.timezone}</p>
+                <p><strong>Fecha Local:</strong> ${localDate}</p>
+                <p><strong>Hora Local:</strong> ${localTime}</p>
+                <p><strong>Estado del Día:</strong> <span class="status ${statusClass}">${statusText}</span></p>
+            `;
+        }
+
+        // Ejecutar la función al cargar la página (por defecto para EE. UU.)
+        updateTimeAndHolidays('US');
+
+        // Escuchar el cambio en el selector
+        selectElement.addEventListener('change', (event) => {
+            updateTimeAndHolidays(event.target.value);
+        });
+
+    </script>
+</body>
+</html>
