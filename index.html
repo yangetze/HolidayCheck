@@ -124,7 +124,7 @@
                 // Por robustez, usaré el endpoint de Holidays API, asumiendo que el usuario tiene la clave.
                 
                 // Reemplazaremos la línea anterior por el endpoint de Holidays API
-                const holidaysApiUrl = `https://calendarific.com/api/v2/holidays?&api_key=${HOLIDAYS_API_KEY}&country=${countryCode}&year=${year}`;
+                const holidaysApiUrl = `https://holidayapi.com/v1/holidays?&api_key=${HOLIDAYS_API_KEY}&country=${countryCode}&year=${year}`;
 
                 const response = await fetch(holidaysApiUrl);
                 
