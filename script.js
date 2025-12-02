@@ -1,5 +1,4 @@
-const key = '92b77053-6254-469f-b98a-75a02484f23e';
-const year = 2024; // Free tier limited to past years
+const year = 2024; // Nager.Date supports recent years freely
 
 const monthNames = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -18,7 +17,8 @@ function fetchHolidays(countryCode) {
     const listContainer = document.getElementById('holidays-list');
     listContainer.innerHTML = '<div class="loading">Cargando festivos...</div>';
 
-    fetch(`https://holidayapi.com/v1/holidays?key=${key}&country=${countryCode}&year=${year}`)
+    // Using Nager.Date API (Public, CORS-friendly)
+    fetch(`https://date.nager.at/api/v3/publicholidays/${year}/${countryCode}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -26,7 +26,8 @@ function fetchHolidays(countryCode) {
             return response.json();
         })
         .then(data => {
-            const allHolidays = data.holidays;
+            // Nager.Date returns a flat array of holiday objects
+            const allHolidays = data;
             listContainer.innerHTML = '';
 
             if (allHolidays && allHolidays.length > 0) {
@@ -59,8 +60,11 @@ function fetchHolidays(countryCode) {
                     const weekdayName = dateObj.toLocaleDateString('es-CO', { weekday: 'long' });
                     const weekdayCapitalized = weekdayName.charAt(0).toUpperCase() + weekdayName.slice(1);
 
+                    // Map 'localName' to name for display
+                    const holidayName = holiday.localName || holiday.name;
+
                     li.innerHTML = `
-                        <div class="holiday-name">${holiday.name}</div>
+                        <div class="holiday-name">${holidayName}</div>
 
                         <div class="holiday-info-col">
                             <span class="holiday-label">Fecha</span>
